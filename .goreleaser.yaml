@@ -1,0 +1,101 @@
+# Builds, archives and publishes unsit. CI runs this on a macOS runner for
+# tags v*; see .github/workflows/release.yml for the secrets it needs.
+version: 2
+project_name: unsit
+
+builds:
+  - main: ./cmd/unsit
+    env:
+      # The macOS tray needs cgo, so darwin builds on macOS; the rest is pure Go.
+      - CGO_ENABLED={{ if eq .Os "darwin" }}1{{ else }}0{{ end }}
+      # Without this, clang targets the build machine's macOS version.
+      - MACOSX_DEPLOYMENT_TARGET=13.0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
+    flags: [-trimpath]
+    ldflags: ["-s -w -X main.version={{ .Version }}"]
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    # No version in the name: install.sh and install.ps1 fetch
+    # releases/latest/download/<name>.
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    files: [LICENSE, README.md]
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  prerelease: auto # tags like v1.0.0-rc1
+
+changelog:
+  sort: asc
+  filters:
+    exclude: ["^docs:", "^test:", "^ci:", "^chore:"]
+
+homebrew_casks:
+  - name: unsit
+    description: Tiny sit/stand timer for the menu bar
+    homepage: "https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/unsit"
+    repository:
+      owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    skip_upload: auto # not for pre-releases such as v1.0.0-rc1
+    # The binary is not notarized: without this, Gatekeeper refuses to run it.
+    hooks:
+      post:
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/unsit"]
+          end
+
+aurs:
+  - name: unsit-bin
+    description: Tiny sit/stand timer for the system tray
+    homepage: "https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/unsit"
+    license: MIT
+    private_key: "{{ .Env.AUR_KEY }}"
+    git_url: ssh://aur@aur.archlinux.org/unsit-bin.git
+    skip_upload: auto
+    provides: [unsit]
+    conflicts: [unsit]
+    package: |-
+      install -Dm755 ./unsit "${pkgdir}/usr/bin/unsit"
+      install -Dm644 ./LICENSE "${pkgdir}/usr/share/licenses/unsit/LICENSE"
+    commit_msg_template: "Update to {{ .Tag }}"
+
+winget:
+  - name: unsit
+    package_name: unsit
+    publisher: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+    short_description: Tiny sit/stand timer for the notification area
+    description: >-
+      unsit alternates 40 minutes of sitting and 20 minutes of standing, with a
+      notification at each switch and a tray icon showing the time left.
+    license: MIT
+    homepage: "https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/unsit"
+    publisher_url: "https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+    publisher_support_url: "https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/unsit/issues"
+    release_notes_url: "https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/unsit/releases/tag/{{ .Tag }}"
+    tags: [standing-desk, sit-stand, timer, reminder, health]
+    skip_upload: auto
+    # Pushes the manifest to your fork of winget-pkgs and opens a PR upstream.
+    repository:
+      owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+      name: winget-pkgs
+      branch: "unsit-{{ .Version }}"
+      token: "{{ .Env.WINGET_TOKEN }}"
+      pull_request:
+        enabled: true
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
