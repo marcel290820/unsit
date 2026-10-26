@@ -1,0 +1,71 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+      - name: gofmt
+        if: runner.os == 'Linux'
+        run: |
+          unformatted=$(gofmt -l .)
+          [ -z "$unformatted" ] || { echo "Not gofmt-ed:"; echo "$unformatted"; exit 1; }
+      - name: dbus-daemon for the end-to-end tests
+        if: runner.os == 'Linux'
+        run: command -v dbus-daemon || { sudo apt-get update && sudo apt-get install -y dbus-daemon; }
+      - run: go vet ./...
+      - name: test
+        if: runner.os != 'Windows'
+        run: go test -race ./...
+      - name: test (no race detector, it needs cgo on Windows)
+        if: runner.os == 'Windows'
+        run: go test ./...
+      - run: go build ./cmd/unsit # unsit, or unsit.exe on Windows
+      - run: ./unsit --version
+      - name: install.sh
+        if: runner.os != 'Windows'
+        run: sh install_test.sh
+
+  # Builds every release target exactly as a tag would, without publishing.
+  release-snapshot:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+      - uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
+        with:
+          version: "~> v2" # 2.19+ for the cask install_steps
+          args: release --snapshot --clean
+        env:
+          HOMEBREW_TAP_TOKEN: unused
+          AUR_KEY: unused
+          WINGET_TOKEN: unused
+      - name: darwin binaries run on macOS 13
+        run: |
+          for bin in dist/unsit_darwin_*/unsit; do
+            minos=$(otool -l "$bin" | awk '/LC_BUILD_VERSION/ { found = 1 } found && $1 == "minos" { print $2; exit }')
+            echo "$bin needs macOS $minos"
+            [ "${minos%%.*}" -le 13 ]
+          done
