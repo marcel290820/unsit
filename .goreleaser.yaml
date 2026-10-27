@@ -27,7 +27,12 @@ archives:
     # No version in the name: install.sh and install.ps1 fetch
     # releases/latest/download/<name>.
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-    files: [LICENSE, README.md]
+    files:
+      - LICENSE
+      - README.md
+      # The app icon Windows shows on unsit's notifications.
+      - src: '{{ if eq .Os "windows" }}assets/unsit.ico{{ end }}'
+        strip_parent: true
 
 checksum:
   name_template: checksums.txt
@@ -56,6 +61,9 @@ homebrew_casks:
           on_macos do
             run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/unsit"]
           end
+    # brew uninstall --zap also removes the LaunchAgent the README sets up.
+    zap:
+      trash: ["~/Library/LaunchAgents/unsit.plist"]
 
 aurs:
   - name: unsit-bin

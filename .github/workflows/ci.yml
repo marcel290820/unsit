@@ -42,6 +42,9 @@ jobs:
       - name: install.sh
         if: runner.os != 'Windows'
         run: sh install_test.sh
+      - name: install.ps1 and uninstall.ps1, in Windows PowerShell
+        if: runner.os == 'Windows'
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File install_test.ps1
 
   # Builds every release target exactly as a tag would, without publishing.
   release-snapshot:

@@ -2,7 +2,8 @@
 
 // gen draws the tray icons: a seated and a standing figure, each in black
 // (macOS template image; light Linux bars and Windows taskbars) and white
-// (dark bars and taskbars). Run it with `go generate ./assets`.
+// (dark bars and taskbars). It also draws unsit.ico, the app icon Windows
+// shows on notifications. Run it with `go generate ./assets`.
 package main
 
 import (
@@ -51,31 +52,69 @@ var glyphs = map[string][]shape{
 	},
 }
 
-// render draws a glyph at size px with 8x8 supersampling for smooth edges.
-func render(shapes []shape, size int, c color.Gray) *image.NRGBA {
+// A paint gives the color at a point of the 32x32 grid, and whether the
+// point is opaque. Transparent points keep the color of the nearest shape,
+// so a scaled icon gets no dark fringe.
+type paint func(x, y float64) (color.NRGBA, bool)
+
+func glyph(shapes []shape, c color.NRGBA) paint {
+	return func(x, y float64) (color.NRGBA, bool) {
+		for _, s := range shapes {
+			if s(x, y) {
+				return c, true
+			}
+		}
+		return c, false
+	}
+}
+
+// badge puts a white glyph on a rounded orange square, legible on light and
+// dark notifications alike.
+func badge(shapes []shape) paint {
+	const k, r = 0.76, 7.0 // the glyph's scale, the corner radius
+	figure := glyph(shapes, color.NRGBA{255, 255, 255, 255})
+	return func(x, y float64) (color.NRGBA, bool) {
+		if c, ok := figure((x-16)/k+16, (y-16)/k+16); ok {
+			return c, true
+		}
+		dx, dy := math.Max(math.Abs(x-16)-(16-r), 0), math.Max(math.Abs(y-16)-(16-r), 0)
+		return color.NRGBA{0xD9, 0x48, 0x0F, 255}, math.Hypot(dx, dy) <= r
+	}
+}
+
+// render draws p at size px with 8x8 supersampling for smooth edges.
+func render(p paint, size int) *image.NRGBA {
 	const ss = 8
 	img := image.NewNRGBA(image.Rect(0, 0, size, size))
 	scale := 32 / float64(size)
 	for py := range size {
 		for px := range size {
-			hits := 0
+			hits, r, g, b := 0, 0, 0, 0
+			var out color.NRGBA
 			for sy := range ss {
 				for sx := range ss {
 					x := (float64(px) + (float64(sx)+0.5)/ss) * scale
 					y := (float64(py) + (float64(sy)+0.5)/ss) * scale
-					for _, s := range shapes {
-						if s(x, y) {
-							hits++
-							break
-						}
+					c, ok := p(x, y)
+					if ok {
+						hits++
+						r, g, b = r+int(c.R), g+int(c.G), b+int(c.B)
+					} else {
+						out = c
 					}
 				}
 			}
-			img.SetNRGBA(px, py, color.NRGBA{c.Y, c.Y, c.Y, uint8(hits * 255 / (ss * ss))})
+			if hits > 0 {
+				out = color.NRGBA{uint8(r / hits), uint8(g / hits), uint8(b / hits), 0}
+			}
+			out.A = uint8(hits * 255 / (ss * ss))
+			img.SetNRGBA(px, py, out)
 		}
 	}
 	return img
 }
+
+var icoSizes = []int{16, 20, 24, 32, 40, 48, 64}
 
 func encodePNG(img image.Image) []byte {
 	var b bytes.Buffer
@@ -126,18 +165,23 @@ func encodeICO(imgs []*image.NRGBA) []byte {
 }
 
 func main() {
-	colors := map[string]color.Gray{"black": {0}, "white": {255}}
+	colors := map[string]color.NRGBA{"black": {0, 0, 0, 255}, "white": {255, 255, 255, 255}}
 	for name, shapes := range glyphs {
 		for cname, c := range colors {
 			base := name + "-" + cname
-			write(base+".png", encodePNG(render(shapes, 64, c)))
-			var imgs []*image.NRGBA
-			for _, n := range []int{16, 20, 24, 32, 40, 48, 64} {
-				imgs = append(imgs, render(shapes, n, c))
-			}
-			write(base+".ico", encodeICO(imgs))
+			write(base+".png", encodePNG(render(glyph(shapes, c), 64)))
+			write(base+".ico", encodeICO(renderAll(glyph(shapes, c))))
 		}
 	}
+	write("unsit.ico", encodeICO(renderAll(badge(glyphs["stand"]))))
+}
+
+func renderAll(p paint) []*image.NRGBA {
+	var imgs []*image.NRGBA
+	for _, n := range icoSizes {
+		imgs = append(imgs, render(p, n))
+	}
+	return imgs
 }
 
 func write(name string, b []byte) {

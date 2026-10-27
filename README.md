@@ -42,8 +42,7 @@ settings there are.
 | Arch, Omarchy   | `yay -S unsit-bin`                |
 | Windows 10/11   | `winget install unsit`            |
 
-Each puts `unsit` on your PATH; open a new terminal and run it. Uninstall with
-`brew uninstall unsit`, `yay -R unsit-bin` or `winget uninstall unsit`.
+Each puts `unsit` on your PATH; open a new terminal and run it.
 
 No package manager? These download the latest release, check it against the
 published checksum and install it without admin rights:
@@ -58,8 +57,7 @@ curl -fsSL https://raw.githubusercontent.com/marcel290820/unsit/main/install.sh 
 irm https://raw.githubusercontent.com/marcel290820/unsit/main/install.ps1 | iex
 ```
 
-To uninstall, delete `~/.local/bin/unsit`, or on Windows the
-`%LOCALAPPDATA%\Programs\unsit` folder and its PATH entry.
+To remove unsit again, see [Uninstall](#uninstall).
 
 ## Usage
 
@@ -116,11 +114,11 @@ menu bars. Notifications come through AppleScript, so macOS files them under
 System Settings > Notifications.
 
 **Windows.** The icon is white on a dark taskbar and black on a light one.
-Notifications show *Windows PowerShell* as their source: unsit borrows
-PowerShell's registered app identity rather than writing registry entries of
-its own. Started from Explorer or a Startup shortcut, unsit closes the console
-window Windows opens for it; started from a terminal, it stays there and
-Ctrl-C works.
+Notifications come from *unsit*, with its orange icon; to silence them or
+change their sound, look for unsit under Settings > System > Notifications.
+Started from Explorer or a Startup shortcut, unsit closes the console window
+Windows opens for it; started from a terminal, it stays there and Ctrl-C
+works.
 
 ## Start at login (optional)
 
@@ -164,12 +162,30 @@ To undo it, delete `unsit.lnk` from the folder `shell:startup` opens.
 
 unsit waits a few seconds for the bar's tray, so starting both together is fine.
 
+## Uninstall
+
+| Installed with  | Remove with                                                     |
+|-----------------|-----------------------------------------------------------------|
+| Homebrew        | `brew uninstall --zap unsit`                                    |
+| AUR             | `yay -R unsit-bin`                                              |
+| winget          | `winget uninstall unsit`                                        |
+| `install.sh`    | `rm ~/.local/bin/unsit`                                         |
+| `install.ps1`   | `irm https://raw.githubusercontent.com/marcel290820/unsit/main/uninstall.ps1 \| iex` |
+
+`--zap` also deletes the LaunchAgent from [Start at login](#start-at-login-optional),
+and `uninstall.ps1` also deletes the Startup shortcut and the PATH entry. In
+the other cases, undo autostart yourself: delete `~/Library/LaunchAgents/unsit.plist`
+or `unsit.lnk` in `shell:startup`, or remove the line from your Hyprland config.
+
 ## Privacy
 
-unsit makes no network connections and keeps no state. It writes no files,
-with one exception: on Windows, the tray library hands each icon to Windows
-through a small file in `%TEMP%`, which unsit deletes as soon as Windows has
-loaded it.
+unsit makes no network connections and keeps no settings, history or logs.
+On Windows it registers its name and icon for notifications under
+`HKEY_CURRENT_USER\Software\Classes\AppUserModelId\unsit`, as a volatile key
+that Windows drops at sign-out, and the tray library hands each tray icon to
+Windows through a file in `%TEMP%`, which unsit deletes right away. So once
+uninstalled, unsit leaves nothing behind after your next sign-out, apart from
+any autostart entry you added yourself.
 
 ## Building
 

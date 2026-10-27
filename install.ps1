@@ -4,12 +4,11 @@
 #
 #   irm https://raw.githubusercontent.com/marcel290820/unsit/main/install.ps1 | iex
 #
-# Uninstall: delete %LOCALAPPDATA%\Programs\unsit and remove it from your user
-# PATH (Settings > System > About > Advanced system settings > Environment Variables).
+# Uninstall with uninstall.ps1, the same way.
 
 & {
     $ErrorActionPreference = 'Stop'
-    $ProgressPreference = 'SilentlyContinue' # the progress bar slows downloads a lot in Windows PowerShell
+    $ProgressPreference = 'SilentlyContinue' # the progress bar slows Expand-Archive a lot in Windows PowerShell
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
     $repo = 'marcel290820/unsit'
@@ -21,30 +20,33 @@
     New-Item -ItemType Directory -Path $tmp | Out-Null
     try {
         Write-Host "Downloading $archive"
-        Invoke-WebRequest -UseBasicParsing -Uri "$url/$archive" -OutFile "$tmp\$archive"
-        Invoke-WebRequest -UseBasicParsing -Uri "$url/checksums.txt" -OutFile "$tmp\checksums.txt"
+        # Paths are literal throughout: a user name can hold [ or ], which
+        # PowerShell otherwise reads as wildcards (Invoke-WebRequest -OutFile too).
+        $web = New-Object Net.WebClient
+        $web.DownloadFile("$url/$archive", "$tmp\$archive")
+        $web.DownloadFile("$url/checksums.txt", "$tmp\checksums.txt")
 
-        $want = foreach ($line in Get-Content "$tmp\checksums.txt") {
+        $want = foreach ($line in Get-Content -LiteralPath "$tmp\checksums.txt") {
             if ($line -match "^([0-9a-f]{64})\s+$([regex]::Escape($archive))$") { $Matches[1] }
         }
-        $got = (Get-FileHash -Algorithm SHA256 "$tmp\$archive").Hash.ToLower()
+        $got = (Get-FileHash -Algorithm SHA256 -LiteralPath "$tmp\$archive").Hash.ToLower()
         if (-not $want -or $want -ne $got) {
             throw "checksum mismatch for $archive; not installing"
         }
 
-        Expand-Archive -Path "$tmp\$archive" -DestinationPath "$tmp\x"
+        Expand-Archive -LiteralPath "$tmp\$archive" -DestinationPath "$tmp\x"
         $version = & "$tmp\x\unsit.exe" --version
         if ($LASTEXITCODE -ne 0) {
             throw "the downloaded unsit.exe does not run on this system; not installing"
         }
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
         try {
-            Copy-Item -Force "$tmp\x\unsit.exe" "$dir\unsit.exe"
+            Copy-Item -Force -LiteralPath "$tmp\x\unsit.exe", "$tmp\x\unsit.ico" -Destination $dir
         } catch {
             throw "could not replace $dir\unsit.exe. If unsit is running, stop it from its tray menu and try again."
         }
     } finally {
-        Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+        Remove-Item -Recurse -Force -LiteralPath $tmp -ErrorAction SilentlyContinue
     }
 
     # Edit the registry value directly: [Environment]::SetEnvironmentVariable
