@@ -10,7 +10,8 @@ cross-compile). It:
    `checksums.txt`,
 3. attests the archives' build provenance,
 4. updates the Homebrew cask in `marcel290820/homebrew-tap`,
-5. pushes `PKGBUILD` and `.SRCINFO` to the AUR package `unsit-bin`,
+5. pushes `PKGBUILD` and `.SRCINFO` to the AUR package `unsit-bin`, unless
+   the `AUR_KEY` secret is unset,
 6. pushes a winget manifest to your fork of `winget-pkgs` and opens a pull
    request against `microsoft/winget-pkgs`.
 
@@ -40,6 +41,10 @@ publishing on every push, so a broken release config shows up before you tag.
    `PKGBUILD` has no `# Maintainer:` line; add `aurs[0].maintainers` to
    `.goreleaser.yaml` if you want one.
 
+   AUR sign-ups were closed in October 2026. Until you have an account,
+   leave `AUR_KEY` unset: releases then skip the AUR. Once `unsit-bin` is
+   up, add it back to the install and uninstall tables in `README.md`.
+
 3. **winget.** Fork `microsoft/winget-pkgs` into your account. Create a
    classic personal access token with the `public_repo` scope (opening a pull
    request on a repository you don't own needs a classic token) and save it
@@ -58,9 +63,9 @@ git tag -a v1.0.0 -m "v1.0.0"
 git push origin v1.0.0
 ```
 
-Then check that `brew install marcel290820/tap/unsit`, `yay -S unsit-bin` and,
-once Microsoft has merged the pull request, `winget install unsit` install the
-new version.
+Then check that `brew install marcel290820/tap/unsit`, `yay -S unsit-bin` (once
+the package is up) and, once Microsoft has merged the pull request,
+`winget install unsit` install the new version.
 
 ## Signing
 

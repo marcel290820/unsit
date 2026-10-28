@@ -72,7 +72,9 @@ aurs:
     license: MIT
     private_key: "{{ .Env.AUR_KEY }}"
     git_url: ssh://aur@aur.archlinux.org/unsit-bin.git
-    skip_upload: auto
+    # Skipped while the AUR_KEY secret is unset (see RELEASING.md); auto skips
+    # pre-releases.
+    skip_upload: '{{ if isEnvSet "AUR_KEY" }}auto{{ else }}true{{ end }}'
     provides: [unsit]
     conflicts: [unsit]
     package: |-

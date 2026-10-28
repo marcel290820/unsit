@@ -36,13 +36,13 @@ settings there are.
 
 ## Install
 
-| Platform        | Command                           |
-|-----------------|-----------------------------------|
+| Platform        | Command                                |
+|-----------------|----------------------------------------|
 | macOS           | `brew install marcel290820/tap/unsit`  |
-| Arch, Omarchy   | `yay -S unsit-bin`                |
-| Windows 10/11   | `winget install unsit`            |
+| Windows 10/11   | `winget install unsit`                 |
 
-Each puts `unsit` on your PATH; open a new terminal and run it.
+Each puts `unsit` on your PATH; open a new terminal and run it. On Arch and
+Omarchy, use `install.sh` below for now: an AUR package is planned.
 
 No package manager? These download the latest release, check it against the
 published checksum and install it without admin rights:
@@ -167,7 +167,6 @@ unsit waits a few seconds for the bar's tray, so starting both together is fine.
 | Installed with  | Remove with                                                     |
 |-----------------|-----------------------------------------------------------------|
 | Homebrew        | `brew uninstall --zap unsit`                                    |
-| AUR             | `yay -R unsit-bin`                                              |
 | winget          | `winget uninstall unsit`                                        |
 | `install.sh`    | `rm ~/.local/bin/unsit`                                         |
 | `install.ps1`   | `irm https://raw.githubusercontent.com/marcel290820/unsit/main/uninstall.ps1 \| iex` |
