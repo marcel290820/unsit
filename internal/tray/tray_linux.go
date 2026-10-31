@@ -102,11 +102,19 @@ func listed(ctx context.Context, conn *dbus.Conn, name string) bool {
 	}
 	items, _ := v.Value().([]string)
 	for _, item := range items {
-		if bus, _, _ := strings.Cut(item, "/"); bus == owner || bus == name {
+		if bus := itemBus(item); bus == owner || bus == name {
 			return true
 		}
 	}
 	return false
+}
+
+// itemBus returns the bus name of a RegisteredStatusNotifierItems entry:
+// "bus/path" on Waybar and KDE, "bus@path" on GNOME's AppIndicator extension.
+func itemBus(item string) string {
+	bus, _, _ := strings.Cut(item, "/")
+	bus, _, _ = strings.Cut(bus, "@")
+	return bus
 }
 
 func started() {}
