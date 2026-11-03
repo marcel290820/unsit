@@ -36,10 +36,10 @@ settings there are.
 
 ## Install
 
-| Platform        | Command                                |
-|-----------------|----------------------------------------|
+| Platform        | Command                                     |
+|-----------------|---------------------------------------------|
 | macOS           | `brew install marcelheidebrecht/tap/unsit`  |
-| Windows 10/11   | `winget install unsit`                 |
+| Windows 10/11   | `winget install unsit`                      |
 
 Each puts `unsit` on your PATH; open a new terminal and run it. On Arch and
 Omarchy, use `install.sh` below for now: an AUR package is planned.
@@ -164,11 +164,11 @@ unsit waits a few seconds for the bar's tray, so starting both together is fine.
 
 ## Uninstall
 
-| Installed with  | Remove with                                                     |
-|-----------------|-----------------------------------------------------------------|
-| Homebrew        | `brew uninstall --zap unsit`                                    |
-| winget          | `winget uninstall unsit`                                        |
-| `install.sh`    | `rm ~/.local/bin/unsit`                                         |
+| Installed with  | Remove with                                                                               |
+|-----------------|-------------------------------------------------------------------------------------------|
+| Homebrew        | `brew uninstall --zap unsit`                                                              |
+| winget          | `winget uninstall unsit`                                                                  |
+| `install.sh`    | `rm ~/.local/bin/unsit`                                                                   |
 | `install.ps1`   | `irm https://raw.githubusercontent.com/marcelheidebrecht/unsit/main/uninstall.ps1 \| iex` |
 
 `--zap` also deletes the LaunchAgent from [Start at login](#start-at-login-optional),
