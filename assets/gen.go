@@ -68,17 +68,17 @@ func glyph(shapes []shape, c color.NRGBA) paint {
 	}
 }
 
-// badge puts a white glyph on a rounded orange square, legible on light and
+// badge puts a navy glyph on a rounded sky-blue square, legible on light and
 // dark notifications alike.
 func badge(shapes []shape) paint {
 	const k, r = 0.76, 7.0 // the glyph's scale, the corner radius
-	figure := glyph(shapes, color.NRGBA{255, 255, 255, 255})
+	figure := glyph(shapes, color.NRGBA{0x0A, 0x27, 0x40, 255})
 	return func(x, y float64) (color.NRGBA, bool) {
 		if c, ok := figure((x-16)/k+16, (y-16)/k+16); ok {
 			return c, true
 		}
 		dx, dy := math.Max(math.Abs(x-16)-(16-r), 0), math.Max(math.Abs(y-16)-(16-r), 0)
-		return color.NRGBA{0xD9, 0x48, 0x0F, 255}, math.Hypot(dx, dy) <= r
+		return color.NRGBA{0xA9, 0xD1, 0xF2, 255}, math.Hypot(dx, dy) <= r
 	}
 }
 

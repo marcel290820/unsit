@@ -114,7 +114,7 @@ menu bars. Notifications come through AppleScript, so macOS files them under
 System Settings > Notifications.
 
 **Windows.** The icon is white on a dark taskbar and black on a light one.
-Notifications come from *unsit*, with its orange icon; to silence them or
+Notifications come from *unsit*, with its sky-blue icon; to silence them or
 change their sound, look for unsit under Settings > System > Notifications.
 Started from Explorer or a Startup shortcut, unsit closes the console window
 Windows opens for it; started from a terminal, it stays there and Ctrl-C
