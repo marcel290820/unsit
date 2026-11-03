@@ -38,7 +38,7 @@ settings there are.
 
 | Platform        | Command                                |
 |-----------------|----------------------------------------|
-| macOS           | `brew install marcel290820/tap/unsit`  |
+| macOS           | `brew install marcelheidebrecht/tap/unsit`  |
 | Windows 10/11   | `winget install unsit`                 |
 
 Each puts `unsit` on your PATH; open a new terminal and run it. On Arch and
@@ -49,12 +49,12 @@ published checksum and install it without admin rights:
 
 ```sh
 # macOS, Linux: installs to ~/.local/bin
-curl -fsSL https://raw.githubusercontent.com/marcel290820/unsit/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/marcelheidebrecht/unsit/main/install.sh | sh
 ```
 
 ```powershell
 # Windows: installs to %LOCALAPPDATA%\Programs\unsit and adds it to your PATH
-irm https://raw.githubusercontent.com/marcel290820/unsit/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/marcelheidebrecht/unsit/main/install.ps1 | iex
 ```
 
 To remove unsit again, see [Uninstall](#uninstall).
@@ -169,7 +169,7 @@ unsit waits a few seconds for the bar's tray, so starting both together is fine.
 | Homebrew        | `brew uninstall --zap unsit`                                    |
 | winget          | `winget uninstall unsit`                                        |
 | `install.sh`    | `rm ~/.local/bin/unsit`                                         |
-| `install.ps1`   | `irm https://raw.githubusercontent.com/marcel290820/unsit/main/uninstall.ps1 \| iex` |
+| `install.ps1`   | `irm https://raw.githubusercontent.com/marcelheidebrecht/unsit/main/uninstall.ps1 \| iex` |
 
 `--zap` also deletes the LaunchAgent from [Start at login](#start-at-login-optional),
 and `uninstall.ps1` also deletes the Startup shortcut and the PATH entry. In

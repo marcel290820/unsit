@@ -2,13 +2,13 @@
 # Installs the latest unsit release for macOS or Linux into ~/.local/bin
 # (override with UNSIT_INSTALL_DIR). No sudo; writes nothing else.
 #
-#   curl -fsSL https://raw.githubusercontent.com/marcel290820/unsit/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/marcelheidebrecht/unsit/main/install.sh | sh
 #
 # Uninstall: rm ~/.local/bin/unsit
 
 set -eu
 
-repo="marcel290820/unsit"
+repo="marcelheidebrecht/unsit"
 dir="${UNSIT_INSTALL_DIR:-$HOME/.local/bin}"
 
 fail() {

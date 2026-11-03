@@ -2,7 +2,7 @@
 # %LOCALAPPDATA%\Programs\unsit and adds that folder to your user PATH.
 # No admin rights; writes nothing else.
 #
-#   irm https://raw.githubusercontent.com/marcel290820/unsit/main/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/marcelheidebrecht/unsit/main/install.ps1 | iex
 #
 # Uninstall with uninstall.ps1, the same way.
 
@@ -11,7 +11,7 @@
     $ProgressPreference = 'SilentlyContinue' # the progress bar slows Expand-Archive a lot in Windows PowerShell
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-    $repo = 'marcel290820/unsit'
+    $repo = 'marcelheidebrecht/unsit'
     $dir = Join-Path $env:LOCALAPPDATA 'Programs\unsit'
     $archive = 'unsit_windows_amd64.zip' # also runs on Windows on Arm, emulated
     $url = "https://github.com/$repo/releases/latest/download"

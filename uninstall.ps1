@@ -2,7 +2,7 @@
 # user PATH entry, plus the Startup shortcut from the README if it points
 # there. Stops unsit first if it is running from that folder.
 #
-#   irm https://raw.githubusercontent.com/marcel290820/unsit/main/uninstall.ps1 | iex
+#   irm https://raw.githubusercontent.com/marcelheidebrecht/unsit/main/uninstall.ps1 | iex
 
 & {
     $ErrorActionPreference = 'Stop'

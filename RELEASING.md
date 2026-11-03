@@ -9,7 +9,7 @@ cross-compile). It:
    GoReleaser, and publishes a GitHub release with the archives and
    `checksums.txt`,
 3. attests the archives' build provenance,
-4. updates the Homebrew cask in `marcel290820/homebrew-tap`,
+4. updates the Homebrew cask in `marcelheidebrecht/homebrew-tap`,
 5. pushes `PKGBUILD` and `.SRCINFO` to the AUR package `unsit-bin`, unless
    the `AUR_KEY` secret is unset,
 6. pushes a winget manifest to your fork of `winget-pkgs` and opens a pull
@@ -23,7 +23,7 @@ publishing on every push, so a broken release config shows up before you tag.
 
 ## One-time setup
 
-1. **Homebrew tap.** Create a public repository `marcel290820/homebrew-tap` with
+1. **Homebrew tap.** Create a public repository `marcelheidebrecht/homebrew-tap` with
    an initial commit (a README is enough). Create a fine-grained personal
    access token with *Contents: read and write* on that repository only, and
    save it as the repository secret `HOMEBREW_TAP_TOKEN`.
@@ -49,7 +49,7 @@ publishing on every push, so a broken release config shows up before you tag.
    classic personal access token with the `public_repo` scope (opening a pull
    request on a repository you don't own needs a classic token) and save it
    as the secret `WINGET_TOKEN`. The package identifier is
-   `marcel290820.unsit`, with your GitHub name as the publisher; change
+   `marcelheidebrecht.unsit`, with your GitHub name as the publisher; change
    `publisher` and `package_identifier` under `winget` in `.goreleaser.yaml`
    before the first release if you want something else, because it should
    not change later. Microsoft reviews each pull request, the first one more
@@ -63,7 +63,7 @@ git tag -a v1.0.0 -m "v1.0.0"
 git push origin v1.0.0
 ```
 
-Then check that `brew install marcel290820/tap/unsit`, `yay -S unsit-bin` (once
+Then check that `brew install marcelheidebrecht/tap/unsit`, `yay -S unsit-bin` (once
 the package is up) and, once Microsoft has merged the pull request,
 `winget install unsit` install the new version.
 
