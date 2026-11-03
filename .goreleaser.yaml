@@ -85,7 +85,7 @@ aurs:
 winget:
   - name: unsit
     package_name: unsit
-    publisher: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+    publisher: marcelheidebrecht # not the repo owner: the package id derives from it
     short_description: Tiny sit/stand timer for the notification area
     description: >-
       unsit alternates 40 minutes of sitting and 20 minutes of standing, with a

@@ -49,9 +49,9 @@ publishing on every push, so a broken release config shows up before you tag.
    classic personal access token with the `public_repo` scope (opening a pull
    request on a repository you don't own needs a classic token) and save it
    as the secret `WINGET_TOKEN`. The package identifier is
-   `marcelheidebrecht.unsit`, with your GitHub name as the publisher; change
-   `publisher` and `package_identifier` under `winget` in `.goreleaser.yaml`
-   before the first release if you want something else, because it should
+   `marcelheidebrecht.unsit`. GoReleaser derives it and the manifest path
+   from `publisher` under `winget` in `.goreleaser.yaml`, so `publisher` is
+   a fixed name instead of the repository owner: the identifier should
    not change later. Microsoft reviews each pull request, the first one more
    closely; until it merges, `winget install unsit` finds nothing and
    Windows users need `install.ps1`.
