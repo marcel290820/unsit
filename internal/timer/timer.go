@@ -26,8 +26,8 @@ func (p Phase) String() string {
 type State struct {
 	Phase Phase
 	Left  time.Duration // until the next switch; always positive
-	// Switched marks the first State of a new phase. The initial Sitting
-	// phase is not a switch.
+	// Switched marks the first State of a new phase the timer started. The
+	// initial Sitting phase and a skip are not switches.
 	Switched bool
 }
 
@@ -39,9 +39,12 @@ type State struct {
 // past the deadline switches phase exactly once, however late it is, and the
 // new phase runs its full length from that tick: no backlog of switches.
 //
+// A receive on skips ends the current phase now and starts the next one at
+// its full length. skips may be nil.
+//
 // Run returns when ctx is done or ticks is closed, and never calls update
 // after ctx is done.
-func Run(ctx context.Context, now func() time.Time, ticks <-chan time.Time, sit, stand time.Duration, update func(State)) {
+func Run(ctx context.Context, now func() time.Time, ticks <-chan time.Time, skips <-chan struct{}, sit, stand time.Duration, update func(State)) {
 	length := func(p Phase) time.Duration {
 		if p == Standing {
 			return stand
@@ -56,25 +59,31 @@ func Run(ctx context.Context, now func() time.Time, ticks <-chan time.Time, sit,
 	update(State{Phase: phase, Left: sit})
 
 	for {
+		skipped := false
 		select {
 		case <-ctx.Done():
 			return
 		case _, ok := <-ticks:
-			// Both cases can be ready at once; stopping wins.
-			if !ok || ctx.Err() != nil {
+			if !ok {
 				return
 			}
-			t := now().Round(0)
-			switched := !t.Before(deadline)
-			if switched {
-				phase = 1 - phase
-			}
-			// The second case catches the clock being set back, which would
-			// otherwise stretch the phase.
-			if switched || deadline.Sub(t) > length(phase) {
-				deadline = t.Add(length(phase))
-			}
-			update(State{Phase: phase, Left: deadline.Sub(t), Switched: switched})
+		case <-skips:
+			skipped = true
 		}
+		// Several cases can be ready at once; stopping wins.
+		if ctx.Err() != nil {
+			return
+		}
+		t := now().Round(0)
+		switched := !skipped && !t.Before(deadline)
+		if switched || skipped {
+			phase = 1 - phase
+		}
+		// The last case catches the clock being set back, which would
+		// otherwise stretch the phase.
+		if switched || skipped || deadline.Sub(t) > length(phase) {
+			deadline = t.Add(length(phase))
+		}
+		update(State{Phase: phase, Left: deadline.Sub(t), Switched: switched})
 	}
 }

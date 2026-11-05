@@ -200,8 +200,9 @@ func (d *desktop) iconColor() string {
 
 func (d *desktop) tooltip() string { return d.itemProp("ToolTip").([]any)[2].(string) }
 
-// menu returns the tray menu's labels, with the ID of Stop.
-func (d *desktop) menu() (labels []string, stopID int32) {
+// menu returns the tray menu's labels, with the IDs of the items by label.
+func (d *desktop) menu() (labels []string, ids map[string]int32) {
+	ids = map[string]int32{}
 	var layout struct {
 		ID       int32
 		Props    map[string]dbus.Variant
@@ -220,12 +221,15 @@ func (d *desktop) menu() (labels []string, stopID int32) {
 		if enabled, ok := props["enabled"].Value().(bool); ok && !enabled {
 			label += " (disabled)"
 		}
-		if label == "Stop" {
-			stopID = fields[0].(int32)
-		}
+		ids[label] = fields[0].(int32)
 		labels = append(labels, label)
 	}
-	return labels, stopID
+	return labels, ids
+}
+
+func (d *desktop) click(id int32) {
+	must(d.t, d.conn.Object(d.itemName(), "/StatusNotifierItem/menu").Call(
+		"com.canonical.dbusmenu.Event", 0, id, "clicked", dbus.MakeVariant(""), uint32(0)).Err)
 }
 
 // startUnsit builds and starts unsit. A separate build, not this test binary:
@@ -274,8 +278,8 @@ func TestEndToEndTray(t *testing.T) {
 	if got := d.iconColor(); got != "white" {
 		t.Errorf("icon on a dark desktop = %s, want white", got)
 	}
-	labels, stopID := d.menu()
-	if want := []string{"Sitting · 1 min left (disabled)", "-", "Stop"}; strings.Join(labels, "|") != strings.Join(want, "|") {
+	labels, ids := d.menu()
+	if want := []string{"Sitting · 1 min left (disabled)", "Skip", "-", "Stop"}; strings.Join(labels, "|") != strings.Join(want, "|") {
 		t.Errorf("menu = %q, want %q", labels, want)
 	}
 
@@ -292,13 +296,29 @@ func TestEndToEndTray(t *testing.T) {
 		t.Errorf("notifications = %+v, want %+v", got, want)
 	}
 
-	must(t, d.conn.Object(d.itemName(), "/StatusNotifierItem/menu").Call(
-		"com.canonical.dbusmenu.Event", 0, stopID, "clicked", dbus.MakeVariant(""), uint32(0)).Err)
+	d.click(ids["Stop"])
 	waitExit(t, exited, stderr)
 	time.Sleep(2500 * time.Millisecond) // past the next switch
 	if n := len(d.notifications()); n != 2 {
 		t.Errorf("got %d notifications after Stop", n-2)
 	}
+}
+
+func TestEndToEndSkip(t *testing.T) {
+	d := newDesktop(t, workingHost)
+	_, _, stderr, exited := startUnsit(t, "--sit", "1h", "--stand", "30m")
+
+	eventually(t, "the tray item", 5*time.Second, func() bool { return d.itemName() != "" })
+	_, ids := d.menu()
+	d.click(ids["Skip"])
+	eventually(t, "standing", 3*time.Second, func() bool { return d.tooltip() == "Standing · 30 min left" })
+	d.click(ids["Skip"])
+	eventually(t, "sitting again", 3*time.Second, func() bool { return d.tooltip() == "Sitting · 60 min left" })
+	if n := len(d.notifications()); n != 0 {
+		t.Errorf("got %d notifications for a skip, want none", n)
+	}
+	d.click(ids["Stop"])
+	waitExit(t, exited, stderr)
 }
 
 func TestEndToEndNoTrayFallback(t *testing.T) {

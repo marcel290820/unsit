@@ -19,6 +19,7 @@ type harness struct {
 	t      *testing.T
 	clock  time.Time
 	ticks  chan time.Time
+	skips  chan struct{}
 	states chan State
 	cancel context.CancelFunc
 	done   chan struct{}
@@ -27,10 +28,10 @@ type harness struct {
 func start(t *testing.T) *harness {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
-	h := &harness{t, t0, make(chan time.Time), make(chan State, 16), cancel, make(chan struct{})}
+	h := &harness{t, t0, make(chan time.Time), make(chan struct{}), make(chan State, 16), cancel, make(chan struct{})}
 	go func() {
 		defer close(h.done)
-		Run(ctx, func() time.Time { return h.clock }, h.ticks, sit, stand, func(s State) { h.states <- s })
+		Run(ctx, func() time.Time { return h.clock }, h.ticks, h.skips, sit, stand, func(s State) { h.states <- s })
 	}()
 	t.Cleanup(h.stop)
 	if got, want := h.next(), (State{Phase: Sitting, Left: sit}); got != want {
@@ -45,6 +46,14 @@ func (h *harness) tick(at time.Duration) State {
 	h.t.Helper()
 	h.clock = t0.Add(at)
 	h.ticks <- t0
+	return h.next()
+}
+
+// skip moves the clock to t0+at, skips, and returns the State it produced.
+func (h *harness) skip(at time.Duration) State {
+	h.t.Helper()
+	h.clock = t0.Add(at)
+	h.skips <- struct{}{}
 	return h.next()
 }
 
@@ -82,6 +91,31 @@ func TestPhaseSequence(t *testing.T) {
 		if got := h.tick(step.at); got != step.want {
 			t.Fatalf("at t0+%v: got %+v, want %+v", step.at, got, step.want)
 		}
+	}
+}
+
+func TestSkipStartsNextPhaseFromNow(t *testing.T) {
+	h := start(t)
+	// A skip is no switch: you chose it, so no notification.
+	if got, want := h.skip(10*time.Minute), (State{Phase: Standing, Left: stand}); got != want {
+		t.Fatalf("skip to standing: got %+v, want %+v", got, want)
+	}
+	if got, want := h.skip(15*time.Minute), (State{Phase: Sitting, Left: sit}); got != want {
+		t.Fatalf("skip to sitting: got %+v, want %+v", got, want)
+	}
+	if got, want := h.tick(15*time.Minute+sit), (State{Phase: Standing, Left: stand, Switched: true}); got != want {
+		t.Fatalf("after the skipped-to phase: got %+v, want %+v", got, want)
+	}
+}
+
+// A skip racing the deadline flips the phase once and stays silent.
+func TestSkipAtOrPastDeadline(t *testing.T) {
+	for _, at := range []time.Duration{sit, sit + 5*time.Minute} {
+		h := start(t)
+		if got, want := h.skip(at), (State{Phase: Standing, Left: stand}); got != want {
+			t.Fatalf("skip at t0+%v: got %+v, want %+v", at, got, want)
+		}
+		h.stop()
 	}
 }
 
@@ -155,7 +189,7 @@ func TestStopRacingPendingTick(t *testing.T) {
 		cancel()
 		clock := t0
 		updates := 0
-		Run(ctx, func() time.Time { return clock }, ticks, sit, stand, func(State) {
+		Run(ctx, func() time.Time { return clock }, ticks, nil, sit, stand, func(State) {
 			updates++
 			clock = t0.Add(sit) // the pending tick would switch to Standing
 		})

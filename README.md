@@ -21,6 +21,8 @@ with Omarchy in mind (Hyprland with Waybar or Omarchy's own bar).
 - Shows a tray icon of a seated or standing figure. Its menu shows the time
   left (`Sitting · 23 min left`) and **Stop**. The macOS menu bar also shows
   `Sit 23m` next to the icon; on Windows and Linux, hover the icon for the time.
+- Lets you catch up. Missed a switch? **Skip** in the menu starts the next
+  phase now, at its full length, with no notification.
 - Survives sleep. Phases end at wall-clock times, so a laptop closed through a
   switch gets one notification when it wakes, and the next phase starts then.
   You never get a backlog.
@@ -91,7 +93,8 @@ unsit --sit 10s --stand 5s
 1. The seated icon appears in the tray. Its menu reads `Sitting · 1 min left`.
 2. After 10 seconds: a **Stand up** notification, and the icon stands up.
 3. After 5 more: **Sit down**, and it sits again. It keeps going.
-4. **Stop** in the menu ends it. Run it again and try Ctrl-C.
+4. **Skip** in the menu switches at once.
+5. **Stop** in the menu ends it. Run it again and try Ctrl-C.
 
 `unsit --no-tray --sit 10s --stand 5s` does the same without the icon and
 prints each switch.

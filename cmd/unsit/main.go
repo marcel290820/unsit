@@ -70,8 +70,8 @@ func run(args []string) int {
 	c := cycle{sit: *sit, stand: *stand}
 	if !*noTray {
 		first := timer.State{Phase: timer.Sitting, Left: *sit}
-		err := tray.Run(ctx, first, func(ctx context.Context) {
-			c.run(ctx, func(s timer.State) {
+		err := tray.Run(ctx, first, func(ctx context.Context, skips <-chan struct{}) {
+			c.run(ctx, skips, func(s timer.State) {
 				c.notify(ctx, s)
 				tray.Show(s)
 			})
@@ -83,7 +83,7 @@ func run(args []string) int {
 	}
 
 	fmt.Printf("%s  Sitting for %s. Stop with Ctrl-C.\n", clock(), human(*sit))
-	c.run(ctx, func(s timer.State) {
+	c.run(ctx, nil, func(s timer.State) {
 		if s.Switched {
 			title, body := c.message(s.Phase)
 			fmt.Printf("%s  %s: %s\n", clock(), title, body)
@@ -101,8 +101,8 @@ func fail(msg string) int {
 type cycle struct{ sit, stand time.Duration }
 
 // run drives the cycle on the real clock until ctx is done.
-func (c cycle) run(ctx context.Context, update func(timer.State)) {
-	timer.Run(ctx, time.Now, time.Tick(time.Second), c.sit, c.stand, update)
+func (c cycle) run(ctx context.Context, skips <-chan struct{}, update func(timer.State)) {
+	timer.Run(ctx, time.Now, time.Tick(time.Second), skips, c.sit, c.stand, update)
 }
 
 // message is the notification for entering phase p.

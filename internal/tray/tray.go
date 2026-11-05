@@ -1,5 +1,5 @@
 // Package tray is unsit's tray icon: a seated or standing figure, the time
-// left, and a menu with Stop.
+// left, and a menu with Skip and Stop.
 package tray
 
 import (
@@ -25,12 +25,12 @@ var (
 
 // Run shows the tray icon, first displaying first, and blocks until ctx is
 // done or the user picks Stop. Once the icon is up, it calls start in a new
-// goroutine with a context that also ends on Stop; start keeps the icon
-// current with Show.
+// goroutine with a context that also ends on Stop, and a channel that
+// receives each pick of Skip; start keeps the icon current with Show.
 //
 // If there is no tray to show the icon in, Run returns an error without
 // calling start. Run must be called from the main goroutine.
-func Run(ctx context.Context, first timer.State, start func(context.Context)) error {
+func Run(ctx context.Context, first timer.State, start func(ctx context.Context, skips <-chan struct{})) error {
 	if err := setup(ctx, first); err != nil {
 		return err
 	}
@@ -53,6 +53,12 @@ func Run(ctx context.Context, first timer.State, start func(context.Context)) er
 		text, _ := describe(first)
 		status = systray.AddMenuItem(text, "")
 		status.Disable()
+		skip := systray.AddMenuItem("Skip", "Start the next phase now")
+		// systray drops a click nobody is waiting for, and the cycle can be
+		// busy, say delivering a notification. A buffer keeps one click until
+		// it is free; clicks pending together count once. Set here, before
+		// the menu shows.
+		skip.ClickedCh = make(chan struct{}, 1)
 		systray.AddSeparator()
 		stop := systray.AddMenuItem("Stop", "Stop unsit")
 		// Not inline: the Linux menu stays empty until this callback returns.
@@ -70,7 +76,7 @@ func Run(ctx context.Context, first timer.State, start func(context.Context)) er
 				cancel()
 				systray.Quit()
 			}()
-			start(ctx)
+			start(ctx, skip.ClickedCh)
 		}()
 	}, nil)
 	if state.Load() == gaveUp {
